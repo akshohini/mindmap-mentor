@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindMap Mentor — Know Yourself. Build Your Future.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Instrument+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #0d0d12; --paper: #f5f2ec; --cream: #ede9df;
+    --gold: #c9a84c; --teal: #1a6b5e; --teal-light: #2d9b88;
+    --rust: #b84c2d; --text: #1a1a22; --muted: #7a7870;
+    --border: rgba(13,13,18,0.12); --error: #c0392b; --success: #1a6b5e;
+    --ff-display: 'Playfair Display', Georgia, serif;
+    --ff-body: 'Instrument Sans', sans-serif;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--text); font-family: var(--ff-body); font-size: 16px; line-height: 1.7; overflow-x: hidden; cursor: none; }
+
+  /* Cursor */
+  .cursor { position: fixed; top: 0; left: 0; z-index: 9999; pointer-events: none; }
+  .cursor-dot { width: 8px; height: 8px; background: var(--ink); border-radius: 50%; position: absolute; transform: translate(-50%,-50%); }
+  .cursor-ring { width: 36px; height: 36px; border: 1.5px solid var(--ink); border-radius: 50%; position: absolute; transform: translate(-50%,-50%); transition: all 0.18s ease; opacity: 0.4; }
+  .cursor-ring.expand { width: 56px; height: 56px; opacity: 0.2; }
+
+  /* Grain */
+  body::before { content: ''; position: fixed; inset: 0; z-index: 1000; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; opacity: 0.5; }
+
+  /* NAV */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 900; padding: 18px 48px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); backdrop-filter: blur(20px); background: rgba(245,242,236,0.85); transition: padding 0.3s; }
+  nav.scrolled { padding: 12px 48px; }
+  .nav-logo { font-family: var(--ff-display); font-size: 20px; font-weight: 700; color: var(--ink); text-decoration: none; }
+  .nav-logo span { color: var(--teal); }
+  .nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
+  .nav-links a { font-size: 14px; font-weight: 500; color: var(--muted); text-decoration: none; transition: color 0.2s; position: relative; }
+  .nav-links a::after { content: ''; position: absolute; bottom: -3px; left: 0; right: 100%; height: 1px; background: var(--ink); transition: right 0.25s ease; }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-links a:hover::after { right: 0; }
+  .nav-links a::after { display: none; }
+  .btn-nav { background: none; border: none; font-family: var(--ff-body); cursor: none; }
+  .btn-signin { font-size: 14px; font-weight: 500; color: var(--muted); padding: 0; transition: color 0.2s; }
+  .btn-signin:hover { color: var(--ink); }
+  .btn-nav-cta { background: var(--ink); color: var(--paper); padding: 9px 20px; border-radius: 4px; font-size: 13px; font-weight: 600; letter-spacing: 0.5px; transition: background 0.2s, transform 0.15s; }
+  .btn-nav-cta:hover { background: var(--teal); transform: translateY(-1px); }
+
+  /* HERO */
+  .hero { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 120px 48px 80px; gap: 60px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -200px; right: -200px; width: 700px; height: 700px; background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%); border-radius: 50%; animation: float 8s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-30px)} }
+  .hero-eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--teal); margin-bottom: 24px; opacity: 0; animation: fadeUp 0.8s ease 0.1s forwards; }
+  .hero-eyebrow::before { content: ''; width: 28px; height: 1px; background: var(--teal); }
+  .hero-title { font-family: var(--ff-display); font-size: clamp(44px, 6vw, 76px); font-weight: 900; line-height: 1.05; letter-spacing: -2px; color: var(--ink); margin-bottom: 28px; opacity: 0; animation: fadeUp 0.8s ease 0.2s forwards; }
+  .hero-title em { font-style: italic; color: var(--teal); }
+  .hero-title .accent { color: var(--gold); }
+  .hero-sub { font-size: 17px; color: var(--muted); font-weight: 300; line-height: 1.75; max-width: 460px; margin-bottom: 40px; opacity: 0; animation: fadeUp 0.8s ease 0.3s forwards; }
+  .hero-actions { display: flex; align-items: center; gap: 20px; opacity: 0; animation: fadeUp 0.8s ease 0.4s forwards; }
+  .btn-primary { display: inline-flex; align-items: center; gap: 10px; background: var(--ink); color: var(--paper); padding: 15px 30px; border-radius: 4px; font-size: 15px; font-weight: 600; letter-spacing: 0.3px; text-decoration: none; transition: all 0.2s; border: 2px solid var(--ink); font-family: var(--ff-body); cursor: none; }
+  .btn-primary:hover { background: var(--teal); border-color: var(--teal); transform: translateY(-2px); }
+  .btn-ghost-link { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-size: 14px; font-weight: 500; text-decoration: none; padding: 15px 0; border-bottom: 1px solid var(--border); transition: gap 0.2s, border-color 0.2s; }
+  .btn-ghost-link:hover { gap: 16px; border-color: var(--ink); }
+
+  /* Hero visual card */
+  .hero-visual { opacity: 0; animation: fadeIn 1s ease 0.5s forwards; position: relative; }
+  .visual-card { background: var(--cream); border: 1px solid var(--border); border-radius: 16px; padding: 28px; position: relative; overflow: hidden; }
+  .visual-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--teal), var(--gold)); }
+  .vc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .vc-title { font-family: var(--ff-display); font-size: 15px; font-weight: 700; color: var(--ink); }
+  .vc-badge { font-size: 11px; font-weight: 600; padding: 4px 10px; background: rgba(26,107,94,0.1); color: var(--teal); border-radius: 20px; }
+  .score-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .score-label { font-size: 13px; color: var(--muted); width: 90px; flex-shrink: 0; }
+  .score-bar { flex: 1; height: 6px; background: rgba(13,13,18,0.08); border-radius: 3px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 3px; animation: grow 1.2s ease forwards; }
+  @keyframes grow { from{width:0} }
+  .score-pct { font-size: 13px; font-weight: 600; width: 34px; text-align: right; }
+  .vc-insight { margin-top: 20px; padding: 14px 16px; background: rgba(13,13,18,0.04); border-radius: 8px; border-left: 3px solid var(--gold); font-size: 13px; color: var(--text); line-height: 1.6; }
+  .vc-insight strong { color: var(--teal); }
+  .float-tag { position: absolute; font-size: 11.5px; font-weight: 600; padding: 6px 12px; border-radius: 20px; letter-spacing: 0.2px; animation: float 5s ease-in-out infinite; }
+  .ft1 { top: -16px; right: 40px; background: var(--ink); color: var(--paper); animation-delay: 0s; }
+  .ft2 { bottom: -16px; left: 30px; background: var(--teal); color: white; animation-delay: 2.5s; }
+
+  /* Marquee */
+  .marquee-strip { overflow: hidden; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 14px 0; background: var(--ink); }
+  .marquee-inner { display: flex; width: max-content; animation: scroll 22s linear infinite; }
+  @keyframes scroll { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  .marquee-item { display: flex; align-items: center; gap: 12px; padding: 0 32px; font-size: 13px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; color: rgba(245,242,236,0.6); }
+  .marquee-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+
+  /* Sections */
+  section { padding: 100px 48px; }
+  .section-label { display: inline-flex; align-items: center; gap: 10px; font-size: 11.5px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 18px; }
+  .section-label::before { content: ''; width: 24px; height: 1px; background: var(--muted); }
+  .section-heading { font-family: var(--ff-display); font-size: clamp(32px, 4vw, 52px); font-weight: 800; letter-spacing: -1.5px; line-height: 1.1; color: var(--ink); margin-bottom: 16px; }
+
+  /* How it works */
+  .how-section { background: var(--cream); }
+  .how-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 80px; align-items: start; margin-top: 60px; }
+  .how-intro { font-size: 17px; color: var(--muted); line-height: 1.75; font-weight: 300; }
+  .step { display: flex; gap: 28px; padding: 32px 0; border-bottom: 1px solid var(--border); cursor: default; transition: all 0.2s; }
+  .step:last-child { border-bottom: none; }
+  .step-num { font-family: var(--ff-display); font-size: 42px; font-weight: 900; color: rgba(13,13,18,0.07); line-height: 1; flex-shrink: 0; width: 56px; transition: color 0.2s; }
+  .step:hover .step-num { color: var(--gold); }
+  .step-tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 3px; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .step-title { font-family: var(--ff-display); font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .step-body { font-size: 14.5px; color: var(--muted); line-height: 1.7; }
+
+  /* Features */
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-top: 60px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .feature-card { padding: 36px 32px; background: var(--paper); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); transition: background 0.25s; position: relative; overflow: hidden; }
+  .feature-card:hover { background: var(--cream); }
+  .feature-card:nth-child(3n) { border-right: none; }
+  .feature-card:nth-child(n+4) { border-bottom: none; }
+  .feature-icon { width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 18px; }
+  .feature-title { font-family: var(--ff-display); font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+  .feature-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+  .feature-corner { position: absolute; bottom: 16px; right: 16px; font-size: 11px; color: rgba(13,13,18,0.15); font-family: var(--ff-display); font-weight: 700; }
+
+  /* Stats */
+  .stats-section { background: var(--cream); display: grid; grid-template-columns: repeat(4,1fr); padding: 0; }
+  .stat-item { padding: 64px 48px; border-right: 1px solid var(--border); text-align: center; }
+  .stat-item:last-child { border-right: none; }
+  .stat-num { font-family: var(--ff-display); font-size: 54px; font-weight: 900; letter-spacing: -2px; line-height: 1; color: var(--ink); margin-bottom: 8px; }
+  .stat-num span { color: var(--teal); }
+  .stat-desc { font-size: 13.5px; color: var(--muted); }
+
+  /* Testimonials */
+  .testimonials-section { background: var(--ink); color: var(--paper); }
+  .testimonials-section .section-label { color: rgba(245,242,236,0.4); }
+  .testimonials-section .section-heading { color: var(--paper); }
+  .testi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; margin-top: 60px; }
+  .testi-card { background: rgba(245,242,236,0.05); border: 1px solid rgba(245,242,236,0.08); border-radius: 12px; padding: 28px; transition: border-color 0.25s, transform 0.25s; }
+  .testi-card:hover { border-color: rgba(201,168,76,0.3); transform: translateY(-4px); }
+  .testi-quote { font-size: 15px; line-height: 1.75; color: rgba(245,242,236,0.75); margin-bottom: 24px; font-weight: 300; }
+  .testi-quote::before { content: '"'; font-family: var(--ff-display); font-size: 28px; color: var(--gold); line-height: 0; vertical-align: -8px; margin-right: 4px; }
+  .testi-author { display: flex; align-items: center; gap: 12px; }
+  .testi-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+  .testi-name { font-size: 14px; font-weight: 600; color: var(--paper); }
+  .testi-role { font-size: 12px; color: rgba(245,242,236,0.4); }
+
+  /* CTA */
+  .cta-section { background: var(--teal); color: white; text-align: center; padding: 120px 48px; }
+  .cta-section .section-label { color: rgba(255,255,255,0.5); }
+  .cta-title { font-family: var(--ff-display); font-size: clamp(36px,5vw,64px); font-weight: 900; letter-spacing: -2px; color: white; margin-bottom: 20px; line-height: 1.05; }
+  .cta-sub { font-size: 17px; color: rgba(255,255,255,0.65); font-weight: 300; max-width: 500px; margin: 0 auto 40px; line-height: 1.7; }
+  .btn-white { display: inline-flex; align-items: center; gap: 10px; background: white; color: var(--teal); padding: 16px 34px; border-radius: 4px; font-size: 15px; font-weight: 700; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; font-family: var(--ff-body); cursor: none; border: none; }
+  .btn-white:hover { transform: translateY(-3px); box-shadow: 0 20px 50px rgba(0,0,0,0.15); }
+
+  /* Footer */
+  footer { background: var(--ink); color: rgba(245,242,236,0.5); padding: 48px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+  .footer-logo { font-family: var(--ff-display); font-size: 18px; font-weight: 700; color: var(--paper); text-decoration: none; }
+  .footer-logo span { color: var(--gold); }
+  .footer-links { display: flex; gap: 28px; }
+  .footer-links a { font-size: 13px; color: rgba(245,242,236,0.4); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--paper); }
+  .footer-copy { font-size: 12px; }
+
+  /* Animations */
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+
+  /* ===================== AUTH MODAL ===================== */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 9000;
+    background: rgba(13,13,18,0.7);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 44px 44px 36px;
+    width: 440px;
+    max-width: calc(100vw - 32px);
+    position: relative;
+    transform: translateY(20px) scale(0.97);
+    transition: transform 0.25s ease;
+    box-shadow: 0 40px 100px rgba(13,13,18,0.25);
+  }
+  .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
+  .modal-close {
+    position: absolute; top: 18px; right: 20px;
+    background: none; border: none; font-size: 22px; color: var(--muted);
+    cursor: none; line-height: 1; padding: 4px;
+    transition: color 0.15s;
+  }
+  .modal-close:hover { color: var(--ink); }
+
+  .modal-logo { font-family: var(--ff-display); font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 28px; }
+  .modal-logo span { color: var(--teal); }
+
+  .modal-title { font-family: var(--ff-display); font-size: 28px; font-weight: 800; color: var(--ink); margin-bottom: 6px; letter-spacing: -0.7px; }
+  .modal-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+
+  .form-field { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; letter-spacing: 0.2px; }
+  .form-input {
+    width: 100%; padding: 12px 14px;
+    background: var(--cream); border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 15px; font-family: var(--ff-body); color: var(--text);
+    outline: none; transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--teal); background: white; }
+  .form-input.error-field { border-color: var(--error); }
+
+  .form-error { font-size: 12.5px; color: var(--error); margin-top: 5px; display: none; }
+  .form-error.show { display: block; }
+
+  .alert {
+    padding: 12px 14px; border-radius: 8px; font-size: 13.5px; margin-bottom: 16px;
+    display: none; line-height: 1.5;
+  }
+  .alert.show { display: block; }
+  .alert-error { background: rgba(192,57,43,0.09); border: 1px solid rgba(192,57,43,0.2); color: var(--error); }
+  .alert-success { background: rgba(26,107,94,0.09); border: 1px solid rgba(26,107,94,0.2); color: var(--teal); }
+
+  .btn-submit {
+    width: 100%; padding: 14px; background: var(--ink); color: var(--paper);
+    border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
+    font-family: var(--ff-body); cursor: none;
+    transition: background 0.2s, transform 0.15s;
+    margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-submit:hover { background: var(--teal); transform: translateY(-1px); }
+  .btn-submit:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+
+  .modal-switch { text-align: center; margin-top: 20px; font-size: 13.5px; color: var(--muted); }
+  .modal-switch a { color: var(--teal); font-weight: 600; text-decoration: none; cursor: none; }
+  .modal-switch a:hover { text-decoration: underline; }
+
+  .divider { display: flex; align-items: center; gap: 14px; margin: 20px 0; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .divider span { font-size: 12px; color: var(--muted); }
+
+  /* Spinner */
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading .spinner { display: block; }
+  .loading .btn-text { display: none; }
+</style>
+</head>
+<body>
+
+<!-- Cursor -->
+<div class="cursor" id="cursor">
+  <div class="cursor-ring" id="cursorRing"></div>
+  <div class="cursor-dot" id="cursorDot"></div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-logo">MindMap<span>Mentor</span></div>
+
+    <!-- Sign In Panel -->
+    <div id="panel-signin">
+      <div class="modal-title">Welcome back.</div>
+      <div class="modal-sub">Sign in to continue your journey.</div>
+
+      <div class="alert alert-error" id="signin-error"></div>
+
+      <div class="form-field">
+        <label class="form-label" for="signin-email">Email address</label>
+        <input class="form-input" type="email" id="signin-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="signin-password">Password</label>
+        <input class="form-input" type="password" id="signin-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+
+      <button class="btn-submit" id="signin-btn" onclick="handleSignIn()">
+        <span class="btn-text">Sign In →</span>
+        <div class="spinner"></div>
+      </button>
+
+      <div class="modal-switch">
+        Don't have an account? <a onclick="switchPanel('register')">Create one free</a>
+      </div>
+    </div>
+
+    <!-- Register Panel -->
+    <div id="panel-register" style="display:none">
+      <div class="modal-title">Start your journey.</div>
+      <div class="modal-sub">Free forever. No credit card needed.</div>
+
+      <div class="alert alert-error" id="register-error"></div>
+
+      <div class="form-field">
+        <label class="form-label" for="reg-name">Full name</label>
+        <input class="form-input" type="text" id="reg-name" placeholder="Your name" autocomplete="name">
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="reg-email">Email address</label>
+        <input class="form-input" type="email" id="reg-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="reg-password">Password</label>
+        <input class="form-input" type="password" id="reg-password" placeholder="Min. 6 characters" autocomplete="new-password">
+      </div>
+
+      <button class="btn-submit" id="register-btn" onclick="handleRegister()">
+        <span class="btn-text">Create Account →</span>
+        <div class="spinner"></div>
+      </button>
+
+      <div class="modal-switch">
+        Already have an account? <a onclick="switchPanel('signin')">Sign in</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="/" class="nav-logo">MindMap<span>Mentor</span></a>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#testimonials">Stories</a></li>
+    <li><button class="btn-nav btn-signin" onclick="openModal('signin')">Sign In</button></li>
+    <li><button class="btn-nav btn-nav-cta" onclick="openModal('register')">Start Free</button></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <div class="hero-eyebrow">AI-Powered Growth Platform</div>
+    <h1 class="hero-title">Know yourself.<br><em>Build</em> your<br><span class="accent">dream life.</span></h1>
+    <p class="hero-sub">MindMap Mentor analyzes your habits, academics, and passions — then gives you a personalized roadmap to the career and life you actually want.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="openModal('register')">Begin Your Journey <span>→</span></button>
+      <a href="#how" class="btn-ghost-link">See how it works <span>↓</span></a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="float-tag ft1">✦ 94% match accuracy</div>
+    <div class="visual-card">
+      <div class="vc-header">
+        <div class="vc-title">Your Growth Profile</div>
+        <div class="vc-badge">AI Analyzed</div>
+      </div>
+      <div class="score-row"><div class="score-label">Sleep</div><div class="score-bar"><div class="score-fill" style="width:72%;background:var(--teal)"></div></div><div class="score-pct" style="color:var(--teal)">72</div></div>
+      <div class="score-row"><div class="score-label">Study</div><div class="score-bar"><div class="score-fill" style="width:85%;background:var(--gold)"></div></div><div class="score-pct" style="color:var(--gold)">85</div></div>
+      <div class="score-row"><div class="score-label">Exercise</div><div class="score-bar"><div class="score-fill" style="width:44%;background:var(--rust)"></div></div><div class="score-pct" style="color:var(--rust)">44</div></div>
+      <div class="score-row"><div class="score-label">Focus</div><div class="score-bar"><div class="score-fill" style="width:91%;background:var(--teal-light)"></div></div><div class="score-pct" style="color:var(--teal-light)">91</div></div>
+      <div class="vc-insight"><strong>Top match:</strong> Based on your CS strengths and coding passion, you're 92% aligned with Software Engineering.</div>
+    </div>
+    <div class="float-tag ft2">↑ 3 career paths found</div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-strip">
+  <div class="marquee-inner">
+    <div class="marquee-item"><div class="marquee-dot"></div>Habit Analysis</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Career Matching</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Dream Life Roadmap</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>AI Insights</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Strength Discovery</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Goal Planning</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Productivity Score</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Personal Growth</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Habit Analysis</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Career Matching</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Dream Life Roadmap</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>AI Insights</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Strength Discovery</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Goal Planning</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Productivity Score</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Personal Growth</div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="section-label">Process</div>
+  <h2 class="section-heading">Four steps to clarity.</h2>
+  <div class="how-grid">
+    <div><p class="how-intro">A structured system that turns your self-knowledge into a concrete plan — no vague advice, no generic tips.</p></div>
+    <div>
+      <div class="step reveal"><div class="step-num">01</div><div><div class="step-tag" style="background:rgba(26,107,94,0.1);color:var(--teal)">Input</div><div class="step-title">Build your profile</div><div class="step-body">Share your sleep, study, exercise habits alongside your grades, strong subjects, hobbies, and aspirations.</div></div></div>
+      <div class="step reveal reveal-delay-1"><div class="step-num">02</div><div><div class="step-tag" style="background:rgba(201,168,76,0.1);color:var(--gold)">Analysis</div><div class="step-title">AI maps your mind</div><div class="step-body">Claude AI processes every data point — finding patterns, spotting weaknesses, identifying your natural strengths.</div></div></div>
+      <div class="step reveal reveal-delay-2"><div class="step-num">03</div><div><div class="step-tag" style="background:rgba(184,76,45,0.1);color:var(--rust)">Insight</div><div class="step-title">Get your dashboard</div><div class="step-body">Scores, recommendations, career matches — all specific to you. Real, actionable guidance.</div></div></div>
+      <div class="step reveal reveal-delay-3"><div class="step-num">04</div><div><div class="step-tag" style="background:rgba(13,13,18,0.07);color:var(--ink)">Growth</div><div class="step-title">Follow your roadmap</div><div class="step-body">A phased plan that takes you from today's habits to your dream career and lifestyle, step by step.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-section">
+  <div class="stat-item reveal"><div class="stat-num" id="s1">12<span>k+</span></div><div class="stat-desc">Students guided</div></div>
+  <div class="stat-item reveal reveal-delay-1"><div class="stat-num" id="s2">94<span>%</span></div><div class="stat-desc">Career match accuracy</div></div>
+  <div class="stat-item reveal reveal-delay-2"><div class="stat-num" id="s3">3<span>min</span></div><div class="stat-desc">Average profile time</div></div>
+  <div class="stat-item reveal reveal-delay-3"><div class="stat-num" id="s4">4.9<span>★</span></div><div class="stat-desc">User satisfaction</div></div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-label">Features</div>
+  <h2 class="section-heading">Everything you need to grow.</h2>
+  <div class="features-grid reveal">
+    <div class="feature-card"><div class="feature-icon" style="background:rgba(26,107,94,0.1)">📊</div><div class="feature-title">Habit Score Dashboard</div><div class="feature-desc">Live scores for sleep, study, exercise, and screen time with trend tracking.</div><div class="feature-corner">01</div></div>
+    <div class="feature-card"><div class="feature-icon" style="background:rgba(201,168,76,0.1)">🧠</div><div class="feature-title">Strength & Weakness Map</div><div class="feature-desc">AI identifies what you're naturally great at and where you're leaving potential on the table.</div><div class="feature-corner">02</div></div>
+    <div class="feature-card"><div class="feature-icon" style="background:rgba(184,76,45,0.1)">🎯</div><div class="feature-title">Career Path Matching</div><div class="feature-desc">Connects your interests, skills, and academics to real career paths with match percentages.</div><div class="feature-corner">03</div></div>
+    <div class="feature-card"><div class="feature-icon" style="background:rgba(45,155,136,0.1)">🗺️</div><div class="feature-title">Dream Life Roadmap</div><div class="feature-desc">A 3-phase plan that bridges where you are with where you want to be — concretely.</div><div class="feature-corner">04</div></div>
+    <div class="feature-card"><div class="feature-icon" style="background:rgba(13,13,18,0.06)">✦</div><div class="feature-title">AI Mentor Insights</div><div class="feature-desc">Personalized narrative analysis — Claude reads your full profile and writes for you specifically.</div><div class="feature-corner">05</div></div>
+    <div class="feature-card"><div class="feature-icon" style="background:rgba(201,168,76,0.1)">📈</div><div class="feature-title">Progress Tracking</div><div class="feature-desc">Re-analyze anytime to track how your habits and scores evolve over weeks and months.</div><div class="feature-corner">06</div></div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials-section" id="testimonials">
+  <div class="section-label">Stories</div>
+  <h2 class="section-heading">What mentees say.</h2>
+  <div class="testi-grid">
+    <div class="testi-card reveal"><div class="testi-quote">I always knew I liked coding but had no idea what to do with it. MindMap Mentor showed me I was 91% aligned with product engineering.</div><div class="testi-author"><div class="testi-avatar" style="background:rgba(45,155,136,0.2);color:var(--teal-light)">AR</div><div><div class="testi-name">Aarav R.</div><div class="testi-role">CS Student, IIT Hyderabad</div></div></div></div>
+    <div class="testi-card reveal reveal-delay-1"><div class="testi-quote">The habit analysis was brutal but honest. I was sleeping 5 hours and spending 6 on Instagram. Seeing the scores side by side made it real.</div><div class="testi-author"><div class="testi-avatar" style="background:rgba(201,168,76,0.15);color:var(--gold)">SK</div><div><div class="testi-name">Sneha K.</div><div class="testi-role">MBA Aspirant, Bangalore</div></div></div></div>
+    <div class="testi-card reveal reveal-delay-2"><div class="testi-quote">After 4 minutes filling my profile, I got a roadmap that actually mapped to my interests in design and finance. Mind blown.</div><div class="testi-author"><div class="testi-avatar" style="background:rgba(184,76,45,0.15);color:var(--rust)">RV</div><div><div class="testi-name">Rohan V.</div><div class="testi-role">Final Year, NIT Warangal</div></div></div></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="section-label">Get Started</div>
+  <h2 class="cta-title">Your best self starts with knowing.</h2>
+  <p class="cta-sub">No generic advice. No motivational fluff. Just AI that sees you clearly and tells you exactly what to do next.</p>
+  <button class="btn-white" onclick="openModal('register')">Start for Free — it's 5 minutes →</button>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="/" class="footer-logo">MindMap<span>Mentor</span></a>
+  <div class="footer-links"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">About</a><a href="#">Contact</a></div>
+  <div class="footer-copy">© 2026 MindMap Mentor. All rights reserved.</div>
+</footer>
+
+<script>
+  // Cursor
+  const dot = document.getElementById('cursorDot');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; dot.style.left = mx+'px'; dot.style.top = my+'px'; });
+  (function animRing(){ rx += (mx-rx)*0.12; ry += (my-ry)*0.12; ring.style.left = rx+'px'; ring.style.top = ry+'px'; requestAnimationFrame(animRing); })();
+  document.querySelectorAll('a, button, .step, .feature-card, .testi-card').forEach(el => { el.addEventListener('mouseenter', ()=>ring.classList.add('expand')); el.addEventListener('mouseleave', ()=>ring.classList.remove('expand')); });
+
+  // Nav scroll
+  window.addEventListener('scroll', () => document.getElementById('navbar').classList.toggle('scrolled', scrollY > 60));
+
+  // Smooth scroll
+  document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => { const t = document.querySelector(a.getAttribute('href')); if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'});} }));
+
+  // Reveal on scroll
+  const observer = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), { threshold: 0.15 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Stat counters
+  function animCounter(el, target, suffix) {
+    let cur = 0; const step = target/50;
+    const t = setInterval(() => { cur = Math.min(cur+step, target); el.innerHTML = (Number.isInteger(target)?Math.round(cur):cur.toFixed(1))+'<span>'+suffix+'</span>'; if(cur>=target) clearInterval(t); }, 30);
+  }
+  new IntersectionObserver(entries => { if(entries[0].isIntersecting){ animCounter(document.getElementById('s1'),12,'k+'); animCounter(document.getElementById('s2'),94,'%'); animCounter(document.getElementById('s3'),3,'min'); animCounter(document.getElementById('s4'),4.9,'★'); } }, {threshold:0.5}).observe(document.querySelector('.stats-section'));
+
+  // ===== AUTH MODAL =====
+  const overlay = document.getElementById('authModal');
+
+  function openModal(panel = 'signin') {
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    switchPanel(panel);
+  }
+  function closeModal() {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    clearErrors();
+  }
+  overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+
+  function switchPanel(name) {
+    document.getElementById('panel-signin').style.display = name === 'signin' ? 'block' : 'none';
+    document.getElementById('panel-register').style.display = name === 'register' ? 'block' : 'none';
+    clearErrors();
+  }
+
+  function clearErrors() {
+    ['signin-error','register-error'].forEach(id => { const el = document.getElementById(id); if(el){el.textContent='';el.classList.remove('show');} });
+    document.querySelectorAll('.form-input').forEach(i => i.classList.remove('error-field'));
+  }
+
+  function showError(panelId, msg) {
+    const el = document.getElementById(panelId);
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = loading;
+    btn.classList.toggle('loading', loading);
+  }
+
+  // ===== SIGN IN =====
+  async function handleSignIn() {
+    clearErrors();
+    const email = document.getElementById('signin-email').value.trim();
+    const password = document.getElementById('signin-password').value;
+    if (!email || !password) { showError('signin-error', 'Please fill in all fields.'); return; }
+
+    setLoading('signin-btn', true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) { showError('signin-error', data.message || 'Sign in failed.'); return; }
+
+      // Save token & redirect to dashboard
+      localStorage.setItem('mm_token', data.token);
+      localStorage.setItem('mm_user', JSON.stringify(data.user));
+      window.location.href = '/dashboard.html';
+    } catch (err) {
+      showError('signin-error', 'Network error. Is the server running?');
+    } finally {
+      setLoading('signin-btn', false);
+    }
+  }
+
+  // ===== REGISTER =====
+  async function handleRegister() {
+    clearErrors();
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    if (!name || !email || !password) { showError('register-error', 'Please fill in all fields.'); return; }
+    if (password.length < 6) { showError('register-error', 'Password must be at least 6 characters.'); return; }
+
+    setLoading('register-btn', true);
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) { showError('register-error', data.message || 'Registration failed.'); return; }
+
+      localStorage.setItem('mm_token', data.token);
+      localStorage.setItem('mm_user', JSON.stringify(data.user));
+      window.location.href = '/dashboard.html';
+    } catch (err) {
+      showError('register-error', 'Network error. Is the server running?');
+    } finally {
+      setLoading('register-btn', false);
+    }
+  }
+
+  // Enter key submits
+  document.getElementById('signin-password').addEventListener('keydown', e => { if(e.key==='Enter') handleSignIn(); });
+  document.getElementById('reg-password').addEventListener('keydown', e => { if(e.key==='Enter') handleRegister(); });
+
+  // Auto-redirect if already logged in
+  if (localStorage.getItem('mm_token')) {
+    fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + localStorage.getItem('mm_token') }, credentials: 'include' })
+      .then(r => { if(r.ok) window.location.href = '/dashboard.html'; })
+      .catch(() => {});
+  }
+</script>
+</body>
+</html>

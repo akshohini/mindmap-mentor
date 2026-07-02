@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — MindMap Mentor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Instrument+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f; --bg2: #111118; --bg3: #1a1a24;
+    --surface: #1e1e2a; --surface2: #252532;
+    --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+    --text: #f0f0f8; --muted: rgba(240,240,248,0.45);
+    --accent: #7c6dfa; --accent2: #a78bfa;
+    --teal: #2dd4bf; --coral: #f97066; --amber: #fbbf24; --green: #4ade80;
+    --ff-head: 'Playfair Display', serif; --ff-body: 'Instrument Sans', sans-serif;
+    --r: 12px; --r2: 18px;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--ff-body); font-size: 15px; line-height: 1.6; min-height: 100vh; cursor: default; }
+
+  /* Cursor */
+  .cursor { position: fixed; top: 0; left: 0; z-index: 9999; pointer-events: none; }
+  .cursor-dot { width: 7px; height: 7px; background: var(--accent2); border-radius: 50%; position: absolute; transform: translate(-50%,-50%); }
+  .cursor-ring { width: 32px; height: 32px; border: 1.5px solid var(--accent2); border-radius: 50%; position: absolute; transform: translate(-50%,-50%); transition: all 0.18s ease; opacity: 0.3; }
+  .cursor-ring.expand { width: 50px; height: 50px; opacity: 0.15; }
+
+  /* Layout */
+  .app { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 230px; flex-shrink: 0;
+    background: var(--bg2); border-right: 1px solid var(--border);
+    padding: 28px 0; display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .logo { padding: 0 22px 24px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+  .logo-mark { font-family: var(--ff-head); font-size: 18px; font-weight: 700; background: linear-gradient(135deg, var(--accent2), var(--teal)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .logo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.3px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 22px; cursor: pointer; color: var(--muted);
+    font-size: 13.5px; font-weight: 400; transition: all 0.15s;
+    border-left: 2px solid transparent; border: none; background: none;
+    font-family: var(--ff-body); width: 100%; text-align: left;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .nav-item.active { color: var(--accent2); border-left: 2px solid var(--accent2); background: rgba(124,109,250,0.07); }
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+
+  .sidebar-footer { margin-top: auto; padding: 16px 22px; border-top: 1px solid var(--border); }
+  .user-chip { display: flex; align-items: center; gap: 9px; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--teal)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; flex-shrink: 0; }
+  .user-name { font-size: 13px; color: var(--text); font-weight: 500; }
+  .user-email { font-size: 11px; color: var(--muted); }
+
+  .btn-logout { display: flex; align-items: center; gap: 8px; padding: 8px 22px; font-size: 12.5px; color: var(--muted); background: none; border: none; font-family: var(--ff-body); cursor: none; width: 100%; text-align: left; transition: color 0.15s; margin-top: 8px; }
+  .btn-logout:hover { color: var(--coral); }
+
+  /* Main */
+  .main { flex: 1; overflow-y: auto; }
+  .main{
+    overflow-x:hidden;
+}
+  .page { display: none; padding: 36px 40px; width: 100%; }
+  .page.active { display: block; }
+
+  /* Page header */
+  .page-header { margin-bottom: 30px; }
+  .page-title { font-family: var(--ff-head); font-size: 28px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
+  .page-sub { color: var(--muted); font-size: 14px; margin-top: 5px; }
+  .greeting { font-size: 13px; color: var(--teal); font-weight: 500; margin-bottom: 6px; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 22px 24px; }
+  .card-title { font-family: var(--ff-head); font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin-bottom: 16px; }
+
+  /* Grid */
+
+  .grid-2{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap:20px;
+}
+
+.card{
+    min-width:0;
+}
+
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .dashboard-shell { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 22px; align-items: start; }
+  .dashboard-side { display: flex; flex-direction: column; gap: 18px; }
+  .mini-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-size: 11px; color: var(--accent2); background: rgba(124,109,250,0.12); border: 1px solid rgba(124,109,250,0.18); }
+  .task-check { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .task-check:last-child { border-bottom: none; }
+  .task-check input[type=checkbox] { width: 16px; height: 16px; margin-top: 4px; accent-color: var(--teal); }
+  .task-check.done span { text-decoration: line-through; color: var(--muted); }
+  .badge-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .badge-card { padding: 12px; border-radius: var(--r); background: var(--surface2); border: 1px solid var(--border2); }
+  .badge-card strong { display: block; font-size: 13px; color: var(--text); }
+  .badge-card span { font-size: 12px; color: var(--muted); }
+  .journal-box { width: 100%; min-height: 110px; border-radius: 10px; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 12px; font-family: var(--ff-body); font-size: 13px; resize: vertical; }
+  .journal-btn { margin-top: 10px; }
+  .gap { margin-bottom: 18px; }
+
+  /* Score ring cards */
+  .score-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+  .ring-wrap { position: relative; width: 80px; height: 80px; }
+  .ring-svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--bg3); stroke-width: 7; }
+  .ring-fg { fill: none; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+  .ring-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--ff-head); font-size: 18px; font-weight: 700; }
+  .score-name { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .score-badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+
+  /* Big overall score */
+  .big-score { display: flex; align-items: center; gap: 22px; padding: 22px 24px; background: linear-gradient(135deg, rgba(124,109,250,0.1), rgba(45,212,191,0.06)); border: 1px solid rgba(124,109,250,0.18); border-radius: var(--r2); margin-bottom: 18px; }
+  .big-num { font-family: var(--ff-head); font-size: 56px; font-weight: 900; background: linear-gradient(135deg, var(--accent2), var(--teal)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
+  .big-level { font-family: var(--ff-head); font-size: 22px; font-weight: 700; color: var(--text); }
+  .big-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* Insight items */
+  .insight-item { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--border); }
+  .insight-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .ii-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .ii-title { font-size: 13.5px; font-weight: 500; margin-bottom: 2px; }
+  .ii-desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+  /* Form elements */
+  .form-group { margin-bottom: 20px; }
+  .form-label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 7px; font-weight: 500; }
+  .range-row { display: flex; align-items: center; gap: 12px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); cursor: none; }
+  .range-val { min-width: 38px; text-align: right; font-weight: 600; font-size: 14px; color: var(--accent2); }
+  select, input[type=text] { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-family: var(--ff-body); font-size: 14px; padding: 10px 12px; outline: none; transition: border-color 0.15s; }
+  select:focus, input[type=text]:focus { border-color: var(--accent); }
+  select option { background: var(--bg3); }
+
+  /* Tags */
+  .dashboard-progress { margin-top: 20px; }
+  .progress-label { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .progress-note { margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .stat-card { text-align: center; }
+  .stat-icon { font-size: 28px; }
+  .stat-caption { color: var(--muted); font-size: 13px; }
+  .schedule-placeholder { color: var(--muted); }
+  .tab-actions { margin-top: 14px; display: flex; justify-content: flex-end; }
+  .goal-group { margin-top: 20px; }
+  .profile-actions { margin-top: 18px; }
+  .roadmap-note { background: linear-gradient(135deg, rgba(124,109,250,0.07), rgba(45,212,191,0.04)); border-color: rgba(124,109,250,0.15); margin-top: 8px; }
+  .roadmap-note-text { font-size: 13px; color: var(--muted); }
+  .schedule-card { margin-bottom: 10px; }
+  .ai-failure { color: var(--coral); }
+  .empty-note { color: var(--muted); font-size: 13px; }
+
+  /* Tabs *
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 8px; font-size: 14px; font-family: var(--ff-body); font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; outline: none; }
+  .btn-accent { background: var(--accent); color: white; }
+  .btn-accent:hover { background: #9580ff; transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border2); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--border); background: var(--surface2); }
+  .btn-full { width: 100%; justify-content: center; }
+  .btn:disabled { opacity: 0.5; transform: none !important; cursor: not-allowed; }
+
+  /* AI box */
+  .ai-box { background: linear-gradient(135deg, rgba(124,109,250,0.08), rgba(45,212,191,0.05)); border: 1px solid rgba(124,109,250,0.2); border-radius: var(--r2); padding: 20px 22px; }
+  .ai-label { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--accent2); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .ai-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .ai-text { font-size: 14px; line-height: 1.7; color: var(--text); }
+  .loading-dots span { animation: blink 1.2s infinite; margin: 0 1px; }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,100%{opacity:0.15} 50%{opacity:1} }
+
+  /* Career cards */
+  .career-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px 22px; margin-bottom: 14px; }
+  .career-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .career-emoji { font-size: 22px; }
+  .career-name { font-family: var(--ff-head); font-size: 16px; font-weight: 700; color: var(--text); }
+  .match-badge { margin-left: auto; font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+  .match-high { background: rgba(74,222,128,0.12); color: var(--green); }
+  .match-mid { background: rgba(251,191,36,0.12); color: var(--amber); }
+  .career-why { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+  .skill-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .skill-pill { font-size: 11.5px; padding: 3px 9px; border-radius: 20px; background: var(--bg3); border: 1px solid var(--border2); color: var(--muted); }
+
+  /* Roadmap */
+  .roadmap-wrap { padding: 8px 0; }
+  .rm-step { display: flex; gap: 16px; padding-bottom: 28px; position: relative; }
+  .rm-step::before { content: ''; position: absolute; left: 17px; top: 36px; bottom: 0; width: 1px; background: linear-gradient(to bottom, var(--accent), transparent); }
+  .rm-step:last-child::before { display: none; }
+  .rm-node { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; border: 2px solid; }
+  .rm-now { background: rgba(124,109,250,0.15); border-color: var(--accent); color: var(--accent2); }
+  .rm-near { background: rgba(45,212,191,0.1); border-color: var(--teal); color: var(--teal); }
+  .rm-far { background: rgba(74,222,128,0.1); border-color: var(--green); color: var(--green); }
+  .rm-content { flex: 1; padding-top: 6px; }
+  .rm-phase { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 4px; }
+  .rm-title { font-family: var(--ff-head); font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .rm-items { list-style: none; }
+  .rm-items li { font-size: 13px; color: var(--muted); padding: 3px 0; display: flex; gap: 8px; }
+  .rm-items li::before { content: '→'; color: var(--accent); flex-shrink: 0; }
+
+  /* Progress bars */
+  .prog-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .prog-name { font-size: 13px; color: var(--muted); width: 100px; flex-shrink: 0; }
+  .prog-bar { flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+.prog-fill{
+    height:100%;
+    background: linear-gradient(90deg,#7c6dfa,#2dd4bf);
+    width:0%;
+    border-radius:3px;
+    transition:width 0.8s ease;
+}
+  .prog-pct { font-size: 12px; font-weight: 600; width: 32px; text-align: right; }
+
+  /* Spinner */
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.25); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loading .spinner { display: block; }
+  .loading .btn-text { display: none; }
+
+  /* Sep */
+  .sep { height: 1px; background: var(--border); margin: 22px 0; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-state .es-icon { font-size: 36px; margin-bottom: 14px; }
+  .empty-state p { font-size: 14px; margin-bottom: 20px; }
+  .glass-input{
+    width:100%;
+    padding:14px 18px;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:14px;
+    background:#181826;
+    color:white;
+    font-size:16px;
+    outline:none;
+}
+
+.glass-input:focus{
+    border-color:#7c5cff;
+    box-shadow:0 0 15px rgba(124,92,255,.3);
+}
+</style>
+</head>
+<body>
+
+
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">MindMap Mentor</div>
+      <div class="logo-sub">Personal Growth Platform</div>
+    </div>
+
+    <button class="nav-item active" onclick="goPage('dashboard')"><span class="nav-icon">◈</span> Dashboard</button>
+    <button class="nav-item" onclick="goPage('tasks')">
+⏰Today Tasks
+</button>
+    <button class="nav-item" onclick="goPage('career')"><span class="nav-icon">◇</span> Career Paths</button>
+    <button class="nav-item" onclick="goPage('roadmap')"><span class="nav-icon">◁</span> Roadmap</button>
+     <button class="nav-item" onclick="goPage('studyplanner')">
+⏰ Study Plan
+</button>
+<div class="nav-item" onclick="goPage('achievements')">
+🏆 Achievements
+</div>
+<div class="nav-item" onclick="goPage('weeklyreview')">
+📈  Daily Review
+</div>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar" id="sidebarAvatar">U</div>
+        <div>
+          <div class="user-name" id="sidebarName">Loading...</div>
+          <div class="user-email" id="sidebarEmail"></div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logout()">⬡ Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="greeting" id="greeting">Good morning ✦</div>
+        <div class="page-title" id="dashTitle">Your Growth Dashboard</div>
+        <div class="page-sub">A clear flow from profile setup to task execution, progress, and weekly review.</div>
+      </div>
+
+      <div class="dashboard-shell">
+        <section class="dashboard-main">
+          <div class="big-score gap" id="overall-card">
+            <div class="mini-pill">Today’s productivity pulse</div>
+            <div class="big-num" id="productivity-num">0%</div>
+            <div class="big-level">Today’s Productivity Score</div>
+            <div class="big-sub">Track completion, streaks, journals, and weekly review from one place.</div>
+            <div class="dashboard-progress">
+              <div class="progress-label">Progress</div>
+              <div class="prog-bar"><div id="productivity-fill" class="prog-fill"></div></div>
+              <div id="productivity-text" class="progress-note">0/0 tasks complete</div>
+            </div>
+          </div>
+
+          <div class="grid-2 gap">
+            <div class="card">
+              <div class="card-title">📋 Daily Task Planner</div>
+              <p class="empty-note">Enter your main tasks, mark them done, and keep your momentum visible throughout the day.</p>
+              <div class="form-group"><label class="form-label">Task 1</label><input type="text" id="task1" placeholder="Revise DBMS notes"></div>
+              <div class="form-group"><label class="form-label">Task 2</label><input type="text" id="task2" placeholder="Solve 20 DSA questions"></div>
+              <div class="form-group"><label class="form-label">Task 3</label><input type="text" id="task3" placeholder="Gym / walk"></div>
+                 <div class="form-group"><label class="form-label">Task 4</label><input type="text" id="task4" placeholder=""></div>
+                    <div class="form-group"><label class="form-label">Task 5</label><input type="text" id="task5" placeholder=""></div>
+                       <div class="form-group"><label class="form-label">Task 6</label><input type="text" id="task6" placeholder=""></div>
+              <button class="btn btn-accent" onclick="saveDailyTasks()">✨ Save Today’s Plan</button>
+            </div>
+
+            <div class="card">
+              <div class="card-title">📝 Daily Journal</div>
+              <p class="empty-note">Capture one reflection point after your study session to support your streak and confidence.</p>
+              <textarea id="daily-journal" class="journal-box" placeholder="Today I focused on..."></textarea>
+              <button class="btn btn-ghost journal-btn" onclick="saveJournal()">Save Journal Note</button>
+            </div>
+          </div>
+
+          <div class="grid-2 gap">
+            <div class="card">
+              <div class="card-title">✅ Today’s Checklist</div>
+              <div id="task-checklist"></div>
+            </div>
+            <div class="card">
+              <div class="card-title">✨ AI Motivation</div>
+              <div id="daily-motivation">Your personalized motivation will appear here.</div>
+            </div>
+          </div>
+           <div class="grid-2 gap">
+            <div class="card">
+        
+            </div>
+          </div>
+        </section>
+
+        <aside class="dashboard-side">
+          <div class="card stat-card"><div class="stat-icon">🔥</div><h3 id="study-streak">14 Days</h3><div class="stat-caption">Study Streak</div></div>
+          <div class="card stat-card"><div class="stat-icon">💪</div><h3 id="exercise-streak">7 Days</h3><div class="stat-caption">Exercise Streak</div></div>
+        </aside>
+      </div>
+    </div>
+
+    <div class="page" id="page-tasks">
+      <div class="page-header"><div class="page-title">Today’s Tasks</div><div class="page-sub">Plan, mark, and review your priority work in one view.</div></div>
+      <div class="grid-2 gap">
+        <div class="card"><div class="card-title">Planner</div><div id="task-checklist-full"></div></div>
+        <div class="card"><div class="card-title">AI Schedule</div><div id="schedule-output"><div class="schedule-placeholder">Your AI schedule will appear here.</div></div></div>
+      </div>
+    </div>
+ 
+
+  
+    
+    
+
+    <!-- CAREER PAGE -->
+<div class="page" id="page-career">
+
+    <div class="page-header">
+        <div class="page-title">Career Paths</div>
+        <div class="page-sub">
+            Discover careers based on your academics, lifestyle, interests and goals
+        </div>
+    </div>
+
+    <div class="grid-2 gap">
+
+        <!-- LEFT SIDE INPUTS -->
+
+        <div class="card">
+
+            <div class="card-title">
+                Academic Information
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">CGPA</label>
+                <input type="number"
+                       id="career-cgpa"
+                        min="1"
+                        step="0.1"
+                       placeholder="8.5"
+                       class="glass-input">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Strong Subjects</label>
+                <input type="text"
+                       id="career-strong"
+                       placeholder="DBMS, DSA, OS">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Weak Subjects</label>
+                <input type="text"
+                       id="career-weak"
+                       placeholder="CN, TOC">
+            </div>
+
+            <hr style="margin:20px 0;border:none;border-top:1px solid rgba(255,255,255,.08)">
+
+            <div class="card-title">
+                Lifestyle Information
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Sleep Hours</label>
+                <input type="number"
+                       id="career-sleep"
+                       placeholder="7"
+                       class="glass-input">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Study Hours</label>
+                <input type="number"
+                       id="career-study"
+                       placeholder="5"
+                       class="glass-input">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Screen Time</label>
+                <input type="number"
+                       id="career-screen"
+                       placeholder="4"
+                       class="glass-input">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Stress Level</label>
+
+                <select id="career-stress">
+                    <option>Low</option>
+                    <option>Medium</option>
+                    <option>High</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Energy Level</label>
+
+                <select id="career-energy">
+                    <option>Low</option>
+                    <option>Medium</option>
+                    <option>High</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Procrastination Level</label>
+
+                <select id="career-procrastination">
+                    <option>Low</option>
+                    <option>Medium</option>
+                    <option>High</option>
+                </select>
+            </div>
+
+            <hr style="margin:20px 0;border:none;border-top:1px solid rgba(255,255,255,.08)">
+
+            <div class="card-title">
+                Career Interests
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Interests</label>
+
+                <input type="text"
+                       id="career-interest"
+                       placeholder="AI, Coding, Robotics">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Dream Career</label>
+
+                <input type="text"
+                       id="career-goal"
+                       placeholder="AI Engineer">
+            </div>
+
+            <button
+                class="btn btn-accent"
+                style="width:100%;margin-top:15px;"
+                onclick="analyzeCareer()">
+
+                ✨ Analyze Career
+
+            </button>
+
+        </div>
+
+        <!-- RIGHT SIDE RESULTS -->
+
+        <div class="card">
+
+            <div class="card-title">
+                Career Recommendations
+            </div>
+
+            <div id="career-results">
+
+                <div style="text-align:center;padding:60px 20px;">
+
+                    <div style="font-size:60px;">
+                        🎯
+                    </div>
+
+                    <h3>
+                        Discover Your Career Path
+                    </h3>
+
+                    <p style="color:var(--muted);">
+                        Fill the form and let AI analyze your profile.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+    <!-- ROADMAP PAGE -->
+    <div class="page" id="page-roadmap">
+      <div class="page-header">
+        <div class="page-title">Your Dream Life Roadmap</div>
+        <div class="page-sub">From where you are now to where you want to be</div>
+      </div>
+      <div id="roadmap-content">
+        <div class="empty-state">
+          <div class="es-icon">◁</div>
+          <p>Analyze your profile first to generate your personalized roadmap.</p>
+        </div>
+      </div>
+    </div>
+   <div class="page" id="page-studyplanner">
+
+<div class="page-header">
+<div class="page-title">📚 AI Study Planner</div>
+<div class="page-sub">
+Create a personalized exam preparation plan
+</div>
+</div>
+
+<div class="grid-2 gap">
+
+<!-- INPUT CARD -->
+<div class="card">
+
+<div class="form-group">
+<label class="form-label">Subject</label>
+<input type="text" id="plannerSubject" placeholder="DBMS">
+</div>
+
+<div class="form-group">
+  <label>📅 Exam After (Days)</label>
+  <input
+    type="number"
+    id="plannerDays"
+    min="1"
+    step="1"
+    placeholder="15"
+    class="glass-input"
+  />
+</div>
+
+<div class="form-group">
+  <label>⏰ Study Hours Per Day</label>
+  <input
+    type="number"
+    id="plannerHours"
+    min="1"
+    step="1"
+    placeholder="4"
+    class="glass-input"
+  />
+</div>
+
+<div class="form-group">
+<label class="form-label">Current Level</label>
+<select id="plannerLevel">
+<option>Beginner</option>
+<option>Intermediate</option>
+<option>Advanced</option>
+</select>
+</div>
+
+<div class="form-group">
+<label class="form-label">Target</label>
+<select id="plannerTarget">
+<option>Pass Exam</option>
+<option>Score 80+</option>
+<option>Master Subject</option>
+</select>
+</div>
+
+<div class="form-group">
+<label class="form-label">Weak Topics (Optional)</label>
+<input type="text"
+id="plannerWeakTopics"
+placeholder="Normalization, Transactions">
+</div>
+
+<button
+class="btn btn-accent"
+onclick="generateStudyPlan()">
+
+✨ Generate Study Plan
+
+</button>
+
+</div>
+
+<!-- OUTPUT CARD -->
+<div class="card">
+
+<div class="card-title">
+Study Plan
+</div>
+
+<div id="studyplan-content">
+
+<div style="color:var(--muted)">
+Your AI study plan will appear here.
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="page" id="page-achievements">
+
+<div class="page-header">
+<div class="page-title">
+🏆 Achievement Center
+</div>
+
+<div class="page-sub">
+Unlock badges as you grow
+</div>
+</div>
+
+<div id="achievement-list" class="grid-2 gap">
+
+</div>
+
+</div>
+<div class="page" id="page-weeklyreview">
+
+<div class="page-header">
+<div class="page-title">
+📈 Daily Review
+</div>
+
+<div class="page-sub">
+See how your Day went
+</div>
+</div>
+
+<div class="card">
+
+<button
+class="btn btn-accent"
+onclick="generateWeeklyReview()">
+
+✨ Generate Daily Review
+
+</button>
+
+</div>
+
+<div id="weekly-review-content">
+
+<div class="card">
+
+Your Day performance will appear here.
+
+</div>
+
+</div>
+
+</div>
+<script>
+const token = localStorage.getItem('mm_token');
+if (!token) {
+  window.location.href = 'index.html';
+}
+
+let currentUser = {};
+try {
+  currentUser = JSON.parse(localStorage.getItem('mm_user') || '{}');
+} catch (err) {
+  localStorage.removeItem('mm_user');
+  currentUser = {};
+}
+const profile = currentUser.profile && typeof currentUser.profile === 'object' ? currentUser.profile : {};
+const state = {
+  sleep: profile.sleep ?? 0,
+  study: profile.study ?? 0,
+  exercise: profile.exercise ?? 0,
+  screen: profile.screen ?? 0,
+  cgpa: profile.cgpa ?? 0,
+};
+
+function init() {
+
+  const h = new Date().getHours();
+
+  const greet =
+    h < 12
+      ? "Good morning ✦"
+      : h < 17
+      ? "Good afternoon ✦"
+      : "Good evening ✦";
+
+  document.getElementById("greeting").textContent = greet;
+
+  document.getElementById("sidebarName").textContent =
+    currentUser.name || "User";
+
+  document.getElementById("sidebarEmail").textContent =
+    currentUser.email || "";
+
+  document.getElementById("sidebarAvatar").textContent =
+    (currentUser.name || "U").charAt(0).toUpperCase();
+
+  document.getElementById("dashTitle").textContent =
+    `Welcome, ${(currentUser.name || "User").split(" ")[0]}.`;
+
+
+
+  // ===== TASKS =====
+
+  if (currentUser.planner?.length) {
+
+    renderTaskChecklist(
+      currentUser.planner.map(item => item.task)
+    );
+
+  }
+
+
+
+  // ===== JOURNAL =====
+
+  if (currentUser.journal) {
+
+    document.getElementById("daily-journal").value =
+      currentUser.journal;
+
+  }
+
+
+
+  // ===== DAILY MOTIVATION =====
+
+  document.getElementById("daily-motivation").textContent =
+    currentUser.dailyMotivation ||
+    "Your personalized motivation will appear here.";
+
+
+
+  // ===== DAILY SCHEDULE =====
+
+  if (currentUser.dailySchedule?.length) {
+
+    renderScheduleOutput({
+      dailySchedule: currentUser.dailySchedule
+    });
+
+  }
+
+
+
+  // ===== STUDY PLAN =====
+
+  if (currentUser.studyPlan?.length) {
+
+    renderStudyPlan({
+      studyPlan: currentUser.studyPlan
+    });
+
+  }
+
+
+
+  // ===== ROADMAP =====
+
+  if (currentUser.roadmap?.length) {
+
+    renderRoadmap({
+      roadmap: currentUser.roadmap
+    });
+
+  }
+
+
+
+  // ===== CAREER RESULTS =====
+
+  if (currentUser.careerResult?.length) {
+
+    renderCareer({
+      careers: currentUser.careerResult
+    });
+
+  }
+
+
+
+  // ===== WEEKLY REVIEW =====
+
+  if (currentUser.weeklyReview) {
+
+    renderWeeklyReview({
+      review: currentUser.weeklyReview
+    });
+
+  }
+  renderAchievements();
+ updateProductivity(0, tasks.length);
+
+  refreshDashboard();
+
+}
+
+function setSlider(id, val, rvId, suffix) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.value = val;
+    document.getElementById(rvId).textContent = `${val}${suffix}`;
+  }
+}
+
+function setSliderDecimal(id, val, rvId) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.value = val;
+    document.getElementById(rvId).textContent = parseFloat(val || 0).toFixed(1);
+  }
+}
+
+function restoreTags(containerId, arr) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.querySelectorAll('.tag').forEach(tag => {
+    const val = tag.getAttribute('data-value');
+    if (val && arr.includes(val)) tag.classList.add('selected');
+  });
+}
+
+function goPage(id) {
+  document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+  const selectedPage = document.getElementById('page-' + id);
+  if (selectedPage) selectedPage.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('onclick') === `goPage('${id}')`);
+  });
+}
+
+
+function computeScores() {
+  const sleepScore = state.sleep >= 7 ? 100 : state.sleep >= 6 ? 75 : state.sleep >= 5 ? 50 : 25;
+  const studyScore = Math.min(100, Math.round((state.study / 8) * 100));
+  const exerciseScore = Math.min(100, Math.round((state.exercise / 5) * 100));
+  const screenScore = state.screen <= 2 ? 100 : state.screen <= 4 ? 70 : state.screen <= 6 ? 40 : 15;
+  const academicScore = Math.round((state.cgpa / 10) * 100);
+  const overall = Math.round((sleepScore + studyScore + exerciseScore + screenScore + academicScore) / 5);
+  return { sleepScore, studyScore, exerciseScore, screenScore, academicScore, overall };
+}
+
+function updateProductivity(completed, total) {
+
+const score =
+total === 0 ? 0 : Math.round((completed / total) * 100);
+
+currentUser.productivity = score;
+
+localStorage.setItem(
+"mm_user",
+JSON.stringify(currentUser)
+);
+
+document.getElementById("productivity-num").textContent =
+`${score}%`;
+
+document.getElementById("productivity-fill").style.width =
+`${score}%`;
+
+document.getElementById("productivity-text").textContent =
+`${completed}/${total} Tasks Completed`;
+
+}
+
+function scoreLevel(s) {
+  if (s >= 85) return ['Peak Form', '#4ade80'];
+  if (s >= 70) return ['Growth Mode', '#a78bfa'];
+  if (s >= 55) return ['Building Up', '#fbbf24'];
+  return ['Needs Focus', '#f97066'];
+}
+
+async function savePlannerToServer(payload) {
+  try {
+    const res = await fetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('mm_token') ? { Authorization: `Bearer ${localStorage.getItem('mm_token')}` } : {}),
+      },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || 'Could not save planner');
+    return data;
+  } catch (err) {
+    console.error('Planner save failed', err);
+    return null;
+  }
+}
+
+function buildFallbackSchedule(tasks) {
+  const base = tasks.length ? tasks : ['Review priorities', 'Practice focused work', 'Reflect and reset'];
+  return [
+    { time: '06:00–08:00', task: base[0], focus: 'Morning focus block' },
+    { time: '09:30–11:30', task: base[1] || 'Deep work session', focus: 'High-energy study block' },
+    { time: '13:00–15:00', task: base[2] || 'Skill practice', focus: 'Afternoon progress block' },
+    { time: '18:30–20:00', task: 'Review, journal, and prep for tomorrow', focus: 'Evening wrap-up' },
+  ];
+}
+async function analyzeCareer() {
+
+
+const box = document.getElementById("career-results");
+
+box.innerHTML =
+"<div style='padding:40px;text-align:center;'>Analyzing Career Profile...</div>";
+
+try {
+
+const res = await fetch("/api/ai/analyze", {
+method:"POST",
+headers: {
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${localStorage.getItem("mm_token")}`
+},
+body: JSON.stringify({
+
+mode:"career",
+
+cgpa: document.getElementById("career-cgpa").value,
+strong: document.getElementById("career-strong").value,
+weak: document.getElementById("career-weak").value,
+sleep: document.getElementById("career-sleep").value,
+study: document.getElementById("career-study").value,
+screen: document.getElementById("career-screen").value,
+stress: document.getElementById("career-stress").value,
+energy: document.getElementById("career-energy").value,
+procrastination: document.getElementById("career-procrastination").value,
+interest: document.getElementById("career-interest").value,
+dreamCareer: document.getElementById("career-goal").value
+
+})
+
+});
+
+const data = await res.json();
+// Save AI result
+
+
+// Update motivation immediately
+const motivationBox =
+document.getElementById("daily-motivation");
+
+if (motivationBox) {
+    motivationBox.textContent =
+    data.dailyMotivation ||
+    "Stay consistent and keep improving!";
+}
+
+renderCareer(data);
+if(!currentUser.achievements)
+currentUser.achievements = [];
+
+if(!currentUser.achievements.includes("Career Explorer")){
+
+currentUser.achievements.push("Career Explorer");
+localStorage.setItem("mm_user", JSON.stringify(currentUser));
+
+
+}
+
+} catch(err){
+
+box.innerHTML =
+"<div style='padding:40px;text-align:center;color:red;'>Failed to analyze profile.</div>";
+
+}
+
+}
+async function generateRoadmap(selectedCareer) {
+
+    goPage("roadmap");
+
+    document.getElementById("roadmap-content").innerHTML =
+    "<div style='padding:50px;text-align:center;'>Generating roadmap...</div>";
+
+    try {
+
+        const response = await fetch("/api/ai/analyze", {
+
+            method: "POST",
+
+            headers: {
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${localStorage.getItem("mm_token")}`
+},
+
+            body: JSON.stringify({
+
+                mode: "roadmap",
+
+                career: selectedCareer,
+
+                cgpa: currentUser.profile.cgpa,
+                sleep: currentUser.profile.sleep,
+                study: currentUser.profile.study,
+                stress: currentUser.profile.stress,
+                energy: currentUser.profile.energy,
+                procrastination: currentUser.profile.procrastination,
+
+                strong: currentUser.profile.strong,
+                weak: currentUser.profile.weak,
+
+                hobby: currentUser.profile.hobby,
+
+                shortGoal: currentUser.profile.shortGoal,
+                longGoal: currentUser.profile.longGoal,
+
+                dreamCareer: currentUser.profile.dreamCareer
+
+            })
+
+        });
+
+        const data = await response.json();
+
+        console.log(data);
+
+        renderRoadmap(data);
+
+    }
+    catch (err) {
+
+        console.log(err);
+
+        document.getElementById("roadmap-content").innerHTML =
+        "<div style='padding:50px;text-align:center;color:red;'>Failed to generate roadmap.</div>";
+
+    }
+
+}
+
+async function generateStudyPlan() {
+
+document.getElementById("studyplan-content").innerHTML =
+"Generating study plan...";
+
+try {
+
+const response = await fetch("/api/ai/analyze", {
+
+method: "POST",
+
+headers: {
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${localStorage.getItem("mm_token")}`
+},
+
+body: JSON.stringify({
+
+mode: "studyplanner",
+
+subject: document.getElementById("plannerSubject").value,
+
+examDays: document.getElementById("plannerDays").value,
+
+studyHours: document.getElementById("plannerHours").value,
+
+level: document.getElementById("plannerLevel").value,
+
+target: document.getElementById("plannerTarget").value,
+
+weakTopics: document.getElementById("plannerWeakTopics").value
+
+})
+
+});
+
+const data = await response.json();
+
+renderStudyPlan(data);
+if(!currentUser.achievements)
+currentUser.achievements = [];
+
+if(!currentUser.achievements.includes("Planner Master")){
+
+currentUser.achievements.push("Planner Master");
+localStorage.setItem("mm_user", JSON.stringify(currentUser));
+
+
+
+}
+
+}
+catch(err){
+console.log(err);
+}
+}
+async function generateWeeklyReview() {
+
+try {
+
+const response = await fetch("/api/ai/analyze", {
+
+method:"POST",
+
+headers: {
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${localStorage.getItem("mm_token")}`
+},
+
+body: JSON.stringify({
+
+mode:"weeklyreview",
+
+productivity:
+document.getElementById("productivity-num")?.textContent || 0,
+
+studyStreak:
+currentUser.studyStreak || 0,
+
+exerciseStreak:
+currentUser.exerciseStreak || 0
+
+})
+
+});
+
+const data = await response.json();
+
+console.log(data);
+
+document.getElementById("weekly-review-content").innerHTML = `
+
+<div class="card">
+
+<h2>📈 Daily Review</h2>
+
+<h3>✅ Strengths</h3>
+<ul>
+${data.strengths.map(x => `<li>${x}</li>`).join("")}
+</ul>
+
+<h3>⚠ Areas to Improve</h3>
+<ul>
+${data.improvements.map(x => `<li>${x}</li>`).join("")}
+</ul>
+
+<h3>🎯 Goals for Next Day</h3>
+<ul>
+${data.nextWeekGoals.map(x => `<li>${x}</li>`).join("")}
+</ul>
+
+<h3>🚀 Motivation</h3>
+<p>${data.motivation}</p>
+
+</div>
+`;
+
+}
+catch(err){
+
+console.log(err);
+
+}
+
+}
+async function saveDailyTasks() {
+  const taskIds = ['task1', 'task2', 'task3','task4','task5','task6'].filter(id => document.getElementById(id));
+  const tasks = taskIds.map(id => document.getElementById(id).value.trim()).filter(Boolean);
+  const response = await fetch("/api/ai/analyze",{
+
+method:"POST",
+
+headers: {
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${localStorage.getItem("mm_token")}`
+},
+
+body: JSON.stringify({
+
+mode:"tasks",
+
+tasks: tasks
+
+})
+
+});
+
+const data = await response.json();
+currentUser.dailyMotivation = data.dailyMotivation;
+currentUser.dailySchedule = data.dailySchedule;
+  const note = document.getElementById('daily-journal').value.trim();
+  document.getElementById("daily-motivation").textContent =
+data.dailyMotivation;
+  await savePlannerToServer({
+    planner: tasks.map(task => ({ task, done: false })),
+    journal: note,
+    dailyMotivation: document.getElementById('daily-motivation').textContent || '',
+  });
+
+  renderTaskChecklist(tasks);
+updateProductivity(0, tasks.length);
+
+ renderScheduleOutput({
+dailySchedule:data.dailySchedule
+});
+
+  goPage('tasks');
+}
+
+async function saveJournal() {
+  const note = document.getElementById('daily-journal').value.trim();
+
+currentUser.journal = note;
+
+localStorage.setItem(
+"mm_user",
+JSON.stringify(currentUser)
+);
+
+alert("Journal saved!");
+
+  alert("Journal saved!");
+}
+
+function renderTaskChecklist(tasks = []) {
+  const list = tasks.length ? tasks.map((task, index) => `
+    <label class="task-check" data-index="${index}">
+      <input type="checkbox" onchange="toggleTask(${index}, this.checked)">
+      <span>${task}</span>
+    </label>`).join('') : '<div class="empty-note">No tasks saved yet. Add your daily plan to start tracking progress.</div>';
+  document.getElementById('task-checklist').innerHTML = list;
+  document.getElementById('task-checklist-full').innerHTML = list;
+}
+
+function renderScheduleOutput(r) {
+  const schedule = Array.isArray(r && r.dailySchedule) ? r.dailySchedule : buildFallbackSchedule(currentUser.tasks || []) || '[]';
+  const output = schedule.length
+    ? schedule.map(item => `
+        <div class="card schedule-card">
+          <div class="card schedule-card">
+
+<h3>${item.time}</h3>
+
+<div class="schedule-task">
+${item.task}
+</div>
+
+<div class="schedule-duration">
+⏱ ${item.duration || ""}
+</div>
+
+<div class="schedule-focus">
+🎯 ${item.focus}
+</div>
+
+</div>
+        </div>`).join('')
+    : '<div class="empty-note">Generate AI insights to unlock your morning-to-evening schedule.</div>';
+  const target = document.getElementById('schedule-output');
+  if (target) target.innerHTML = output;
+}
+
+function toggleTask(index, done) {
+  const taskCard = document.querySelectorAll('.task-check')[index];
+  if (taskCard) taskCard.classList.toggle('done', done);
+const completed =
+document.querySelectorAll('#task-checklist .task-check.done').length;
+
+const total =
+document.querySelectorAll('#task-checklist .task-check').length;
+  updateProductivity(completed, total);
+}
+
+function refreshDashboard() {
+
+  const score = currentUser.productivity || 0;
+
+  document.getElementById("productivity-num").textContent =
+      `${score}%`;
+
+  document.getElementById("productivity-fill").style.width =
+      `${score}%`;
+}
+
+
+function renderCareer(r) {
+  console.log(r);
+  console.log(r.careers);
+  const careers = Array.isArray(r.careers) ? r.careers : [];
+
+  let html = careers.map(c => {
+
+const title = typeof c === "string" ? c : (c.title || c.name);
+
+const emoji = typeof c === "string" ? "✨" : (c.emoji || "✨");
+
+const match = typeof c === "string" ? "" : `${c.match || 0}% Match`;
+
+const why = typeof c === "string" ? "" : (c.why || c.reason || "");
+
+const skills = typeof c === "string"
+  ? []
+  : (c.skills || []);
+
+return `
+
+<div class="career-card">
+
+  <div class="career-header">
+
+    <div class="career-emoji">${emoji}</div>
+
+    <div class="career-name">${title}</div>
+
+    <div class="match-badge">
+      ${match}
+    </div>
+
+  </div>
+
+  <div class="career-why">
+    ${why}
+  </div>
+
+  <div class="skill-pills">
+
+    ${skills.map(s =>
+      `<span class="skill-pill">${s}</span>`
+    ).join("")}
+
+  </div>
+
+  <div style="margin-top:20px;">
+
+    <button
+    class="btn btn-accent"
+    onclick="generateRoadmap('${title}')">
+
+    🚀 Want To Know Your Roadmap?
+
+    </button>
+
+  </div>
+
+</div>
+
+`;
+
+}).join("");
+
+  
+
+  document.getElementById('career-results').innerHTML = html;
+}
+
+function renderRoadmap(r) {
+
+const roadmap = Array.isArray(r.roadmap) ? r.roadmap : [];
+
+document.getElementById("roadmap-content").innerHTML = `
+
+<div class="roadmap-wrap">
+
+${roadmap.map((s,index)=>`
+
+<div class="rm-step">
+
+<div class="rm-node">
+${index+1}
+</div>
+
+<div class="rm-content">
+
+<div class="rm-phase">
+${s.phase || ""}
+</div>
+
+<div class="rm-title">
+${s.title || ""}
+</div>
+
+<ul class="rm-items">
+${(s.steps || []).map(st => `<li>${st}</li>`).join("")}
+</ul>
+
+<div class="career-why">
+${s.description || ""}
+</div>
+
+</div>
+
+</div>
+
+`).join("")}
+
+</div>
+
+`;
+
+}
+
+function renderStudyPlan(r){
+
+const plan = Array.isArray(r.studyPlan)
+? r.studyPlan
+: [];
+
+document.getElementById("studyplan-content").innerHTML =
+
+plan.map(day => `
+
+<div class="card" style="margin-bottom:20px;">
+
+<h3>${day.day}</h3>
+
+<ul>
+
+${day.topics.map(topic =>
+`<li>${topic}</li>`
+).join("")}
+
+</ul>
+
+</div>
+
+`).join("");
+
+}
+function renderAchievements(){
+    const studyStreak = currentUser.studyStreak || 0;
+
+const exerciseStreak = currentUser.exerciseStreak || 0;
+
+const currentProductivity = currentUser.productivity || 0;
+
+let badges = [
+
+
+{
+emoji:"🔥",
+title:"Study Warrior",
+desc:"Maintain a 7-day study streak",
+unlocked:false
+},
+
+{
+emoji:"💪",
+title:"Fitness Hero",
+desc:"Maintain a 7-day exercise streak",
+unlocked:false
+},
+
+{
+emoji:"🚀",
+title:"Career Explorer",
+desc:"Generate your career roadmap",
+unlocked:false
+},
+
+{
+emoji:"📚",
+title:"Planner Master",
+desc:"Generate a study plan",
+unlocked:false
+},
+
+{
+emoji:"⚡",
+title:"Productivity Pro",
+desc:"Complete all daily tasks",
+unlocked:false
+}
+
+];
+if(studyStreak >= 7)
+badges[0].unlocked = true;
+
+if(exerciseStreak >= 7)
+badges[1].unlocked = true;
+
+if(currentUser.achievements?.includes("Career Explorer"))
+badges[2].unlocked = true;
+
+if(currentUser.achievements?.includes("Planner Master"))
+badges[3].unlocked = true;
+
+if(currentProductivity === 100)
+badges[4].unlocked = true;
+document.getElementById("achievement-list").innerHTML =
+
+badges.map(badge => `
+
+<div class="card"
+style="
+opacity:${badge.unlocked ? 1 : 0.4};
+text-align:center;
+">
+
+<div style="font-size:50px;">
+${badge.emoji}
+</div>
+
+<h2>
+${badge.title}
+</h2>
+
+<div style="color:var(--muted)">
+${badge.desc}
+</div>
+
+<div style="
+margin-top:15px;
+font-weight:bold;
+color:${badge.unlocked ? '#4ade80' : '#888'};
+">
+
+${badge.unlocked ? "Unlocked ✅" : "Locked 🔒"}
+
+</div>
+
+</div>
+
+`).join("");
+}
+function renderWeeklyReview(r){
+  console.log(r);
+
+document.getElementById("weekly-review-content").innerHTML = `
+
+<div class="card">
+
+<h2>📈 Daily Analysis</h2>
+
+<p>${r.review}</p>
+
+</div>
+
+`;
+
+}
+function logout() {
+
+localStorage.removeItem("mm_token");
+localStorage.removeItem("mm_user");
+
+window.location.href = "index.html";
+
+}
+
+init();
+goPage('dashboard');
+</script>
+</body>
+</html>

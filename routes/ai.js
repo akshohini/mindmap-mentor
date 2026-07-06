@@ -499,10 +499,11 @@ return res.json(data);
 }
 catch(err){
 
-console.log(err);
+console.error("AI ERROR:", err);
 
 res.status(500).json({
-error:"AI generation failed"
+error: err.message,
+stack: process.env.NODE_ENV === "development" ? err.stack : undefined
 });
 
 }
